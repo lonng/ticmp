@@ -41,5 +41,33 @@ Flags:
 2. Connect to TiComp and treat it as a normal MySQL server
 
     ```shell
+    # Login into TiCompare server
     mysql -h 127.0.0.1 -P 6000 -uroot
+
+    # Query
+    mysql> select uuid();
+    +--------------------------------------+
+    | uuid()                               |
+    +--------------------------------------+
+    | bbfb289e-e125-11ec-b832-c8f6766ec590 |
+    +--------------------------------------+
+    1 row in set (0.01 sec)
+    ```
+
+3. Check your TiCompare output and it should be like following content with diff highlight
+
+    ```
+    QUERY >	 select uuid()
+    TiDB  >
+    +--------------------------------------+
+    | uuid()                               |
+    +--------------------------------------+
+    | bbfb6642-e125-11ec-846a-acde48001122 |
+    +--------------------------------------+
+    MySQL >
+    +--------------------------------------+
+    | uuid()                               |
+    +--------------------------------------+
+    | bbfb289e-e125-11ec-b832-c8f6766ec590 |
+    +--------------------------------------+
     ```
