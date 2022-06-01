@@ -78,7 +78,18 @@ func (r *rows) PrettyText() string {
 			if c == nil {
 				row = append(row, "NULL")
 			} else {
-				row = append(row, fmt.Sprintf("%s", c))
+				// Ref: https://github.com/go-mysql-org/go-mysql/blob/33ea963610607f7b5505fd39d0955b78039ef783/mysql/field.go#L199
+				// Only four types need to been assert.
+				switch x := c.(type) {
+				case uint64, int64:
+					row = append(row, fmt.Sprintf("%d", x))
+				case float64:
+					row = append(row, fmt.Sprintf("%f", x))
+				case string:
+					row = append(row, x)
+				default:
+					row = append(row, fmt.Sprintf("%s", c))
+				}
 			}
 		}
 		allRows = append(allRows, row)
