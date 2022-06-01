@@ -15,6 +15,7 @@ func main() {
 	cfg := &config.Config{}
 	cmd := &cobra.Command{
 		Use: "ticomp",
+		SlienceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			h := handler.NewShadowHandler(cfg)
 
