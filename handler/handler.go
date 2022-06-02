@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/client"
@@ -120,7 +121,7 @@ func (h *ShadowHandler) HandleStmtExecute(context interface{}, query string, arg
 	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult)
 
 	if errEq && resEq {
-		color.Green("%s QUERY >\t %s", h.connIdent, query)
+		color.Green("%s QUERY >\t %s (%s)", h.connIdent, query, strings.Join(FormatArgs(args), ","))
 	}
 
 	return myResult, err1
