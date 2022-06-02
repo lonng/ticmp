@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/mysql"
@@ -20,7 +21,7 @@ func diffError(connIdent string, query string, myErr, tiErr error) bool {
 	return false
 }
 
-func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result) bool {
+func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result, args []interface{}) bool {
 	eq := reflect.DeepEqual(myResult.Resultset, tiResult.Resultset)
 	if eq {
 		return true
@@ -55,7 +56,7 @@ func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result
 		return true
 	}
 
-	color.Red("%s QUERY >\t %s", connIdent, query)
+	color.Red("%s QUERY >\t %s (%s)", connIdent, query, strings.Join(FormatArgs(args), ","))
 	color.Yellow("%s TiDB  >", connIdent)
 	fmt.Println(tidbContent)
 	color.Yellow("%s MySQL >", connIdent)

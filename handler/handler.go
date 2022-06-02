@@ -86,7 +86,7 @@ func (h *ShadowHandler) HandleQuery(query string) (*mysql.Result, error) {
 	tiResult, err2 := h.tidbConn.Execute(query)
 
 	errEq := diffError(h.connIdent, query, err1, err2)
-	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult)
+	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult, nil)
 
 	if errEq && resEq {
 		color.Green("%s QUERY >\t %s", h.connIdent, query)
@@ -118,7 +118,7 @@ func (h *ShadowHandler) HandleStmtExecute(context interface{}, query string, arg
 	tiResult, err2 := h.tidbConn.Execute(query, args...)
 
 	errEq := diffError(h.connIdent, query, err1, err2)
-	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult)
+	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult, args)
 
 	if errEq && resEq {
 		color.Green("%s QUERY >\t %s (%s)", h.connIdent, query, strings.Join(FormatArgs(args), ","))
