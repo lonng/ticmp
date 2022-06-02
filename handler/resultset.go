@@ -79,7 +79,7 @@ func (r *rows) PrettyText() string {
 				row = append(row, "NULL")
 			} else {
 				// Ref: https://github.com/go-mysql-org/go-mysql/blob/33ea963610607f7b5505fd39d0955b78039ef783/mysql/field.go#L199
-				// Only four types need to been assert.
+				// Only four types need to be asserted.
 				switch x := c.(type) {
 				case uint64, int64:
 					row = append(row, fmt.Sprintf("%d", x))
