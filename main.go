@@ -11,25 +11,43 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func onConnect(c net.Conn, cfg *config.Config) error {
+	connIdent := c.RemoteAddr().String()
+	h := handler.NewShadowHandler(cfg, connIdent)
+
+	err := h.Initialize()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := h.Finalize(); err != nil {
+			fmt.Println("Finalize shadow handler failed", err)
+		}
+	}()
+
+	// Create a connection with user root and an empty password.
+	// You can use your own handler to handle command here.
+	conn, err := server.NewConn(c, cfg.User, cfg.Pass, h)
+	if err != nil {
+		return err
+	}
+
+	// as long as the client keeps sending commands, keep handling them
+	for {
+		if err := conn.HandleCommand(); err != nil {
+			fmt.Printf("handle command error: %v\n", err)
+			return err
+		}
+	}
+}
+
 func main() {
 	cfg := &config.Config{}
 	cmd := &cobra.Command{
 		Use:          "ticomp",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			h := handler.NewShadowHandler(cfg)
-
-			err := h.Initialize()
-			if err != nil {
-				return err
-			}
-
-			defer func() {
-				if err := h.Finalize(); err != nil {
-					fmt.Println("Finalize shadow handler failed", err)
-				}
-			}()
-
 			l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 			if err != nil {
 				return err
@@ -38,23 +56,13 @@ func main() {
 			fmt.Printf("Serve successfully (mysql -h 127.0.0.1 -P %d -uroot)\n", cfg.Port)
 
 			// Accept a new connection once
-			c, err := l.Accept()
-			if err != nil {
-				return err
-			}
-
-			// Create a connection with user root and an empty password.
-			// You can use your own handler to handle command here.
-			conn, err := server.NewConn(c, "root", "", h)
-			if err != nil {
-				return err
-			}
-
-			// as long as the client keeps sending commands, keep handling them
 			for {
-				if err := conn.HandleCommand(); err != nil {
+				c, err := l.Accept()
+				if err != nil {
 					return err
 				}
+
+				go onConnect(c, cfg)
 			}
 		},
 	}

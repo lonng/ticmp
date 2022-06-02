@@ -10,17 +10,17 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-func diffError(query string, myErr, tiErr error) bool {
+func diffError(connIdent string, query string, myErr, tiErr error) bool {
 	if myErr == tiErr {
 		return true
 	}
-	color.Red("QUERY >\t %s", query)
-	color.Yellow("TiDB  >\t %v", myErr)
-	color.Yellow("MySQL >\t %v", tiErr)
+	color.Red("%s QUERY >\t %s", connIdent, query)
+	color.Yellow("%s TiDB  >\t %v", connIdent, myErr)
+	color.Yellow("%s MySQL >\t %v", connIdent, tiErr)
 	return false
 }
 
-func diffResult(query string, myResult, tiResult *mysql.Result) bool {
+func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result) bool {
 	eq := reflect.DeepEqual(myResult.Resultset, tiResult.Resultset)
 	if eq {
 		return true
@@ -55,10 +55,10 @@ func diffResult(query string, myResult, tiResult *mysql.Result) bool {
 		return true
 	}
 
-	color.Red("QUERY >\t %s", query)
-	color.Yellow("TiDB  >")
+	color.Red("%s QUERY >\t %s", connIdent, query)
+	color.Yellow("%s TiDB  >", connIdent)
 	fmt.Println(tidbContent)
-	color.Yellow("MySQL >")
+	color.Yellow("%s MySQL >", connIdent)
 	fmt.Println(mysqlContent)
 
 	return false

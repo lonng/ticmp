@@ -17,11 +17,13 @@ type ShadowHandler struct {
 	cfg       *config.Config
 	mysqlConn *client.Conn
 	tidbConn  *client.Conn
+	connIdent string
 }
 
-func NewShadowHandler(config *config.Config) *ShadowHandler {
+func NewShadowHandler(config *config.Config, connIdent string) *ShadowHandler {
 	return &ShadowHandler{
-		cfg: config,
+		cfg:       config,
+		connIdent: connIdent,
 	}
 }
 
@@ -82,11 +84,11 @@ func (h *ShadowHandler) HandleQuery(query string) (*mysql.Result, error) {
 	myResult, err1 := h.mysqlConn.Execute(query)
 	tiResult, err2 := h.tidbConn.Execute(query)
 
-	errEq := diffError(query, err1, err2)
-	resEq := errEq && diffResult(query, myResult, tiResult)
+	errEq := diffError(h.connIdent, query, err1, err2)
+	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult)
 
 	if errEq && resEq {
-		color.Green("QUERY >\t %s", query)
+		color.Green("%s QUERY >\t %s", h.connIdent, query)
 	}
 
 	return myResult, err1
@@ -114,11 +116,11 @@ func (h *ShadowHandler) HandleStmtExecute(context interface{}, query string, arg
 	myResult, err1 := h.mysqlConn.Execute(query, args...)
 	tiResult, err2 := h.tidbConn.Execute(query, args...)
 
-	errEq := diffError(query, err1, err2)
-	resEq := errEq && diffResult(query, myResult, tiResult)
+	errEq := diffError(h.connIdent, query, err1, err2)
+	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult)
 
 	if errEq && resEq {
-		color.Green("QUERY >\t %s", query)
+		color.Green("%s QUERY >\t %s", h.connIdent, query)
 	}
 
 	return myResult, err1
