@@ -131,7 +131,7 @@ func (r *rows) PrettyText() string {
 	}
 	splitLine := "+" + strings.Repeat("-", total) + "+"
 	push(splitLine)
-	push(header)
+	push(strings.ToLower(header))
 	push(splitLine)
 
 	// Write rows data
