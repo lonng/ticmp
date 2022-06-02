@@ -48,7 +48,7 @@ func main() {
 		Use:          "ticomp",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+			l, err := net.Listen("tcp4", fmt.Sprintf(":%d", cfg.Port))
 			if err != nil {
 				return err
 			}

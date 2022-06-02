@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/client"
@@ -82,14 +83,21 @@ func (h *ShadowHandler) UseDB(dbName string) error {
 
 // HandleQuery overwrites the original HandleQuery.
 func (h *ShadowHandler) HandleQuery(query string) (*mysql.Result, error) {
+	start := time.Now()
 	myResult, err1 := h.mysqlConn.Execute(query)
+	myTime := time.Now().Sub(start).String()
+
+	start = time.Now()
 	tiResult, err2 := h.tidbConn.Execute(query)
+	tiTime := time.Now().Sub(start).String()
 
-	errEq := diffError(h.connIdent, query, err1, err2)
-	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult, nil)
-
-	if errEq && resEq {
-		color.Green("%s QUERY >\t %s", h.connIdent, query)
+	c1, c2 := diffResult(err1, err2, myResult, tiResult)
+	if c1 == c2 {
+		color.Green("%s [MySQL %s, TiDB %s] ==> %s", h.connIdent, myTime, tiTime, query)
+	} else {
+		color.Red("%s [MySQL %s, TiDB %s] ==> %s", h.connIdent, myTime, tiTime, query)
+		color.Yellow("%s MySQL >\n%s", h.connIdent, c1)
+		color.Yellow("%s TiDB  >\n%s", h.connIdent, c2)
 	}
 
 	return myResult, err1
@@ -114,14 +122,22 @@ func (h *ShadowHandler) HandleStmtPrepare(query string) (int, int, interface{}, 
 }
 
 func (h *ShadowHandler) HandleStmtExecute(context interface{}, query string, args []interface{}) (*mysql.Result, error) {
+	start := time.Now()
 	myResult, err1 := h.mysqlConn.Execute(query, args...)
+	myTime := time.Now().Sub(start).String()
+
+	start = time.Now()
 	tiResult, err2 := h.tidbConn.Execute(query, args...)
+	tiTime := time.Now().Sub(start).String()
 
-	errEq := diffError(h.connIdent, query, err1, err2)
-	resEq := errEq && diffResult(h.connIdent, query, myResult, tiResult, args)
-
-	if errEq && resEq {
-		color.Green("%s QUERY >\t %s (%s)", h.connIdent, query, strings.Join(FormatArgs(args), ","))
+	c1, c2 := diffResult(err1, err2, myResult, tiResult)
+	argStr := strings.Join(FormatArgs(args), ", ")
+	if c1 == c2 {
+		color.Green("%s [MySQL %s, TiDB %s] ==> %s (%s)", h.connIdent, myTime, tiTime, query, argStr)
+	} else {
+		color.Red("%s [MySQL %s, TiDB %s] ==> %s (%s)", h.connIdent, myTime, tiTime, query, argStr)
+		color.Yellow("%s MySQL >\n%s", h.connIdent, c1)
+		color.Yellow("%s TiDB  >\n%s", h.connIdent, c2)
 	}
 
 	return myResult, err1

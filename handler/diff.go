@@ -4,27 +4,21 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-func diffError(connIdent string, query string, myErr, tiErr error) bool {
-	if myErr == tiErr {
-		return true
+func diffResult(myErr error, tiErr error, myResult, tiResult *mysql.Result) (mysqlContent, tidbContent string) {
+	if myErr != tiErr {
+		mysqlContent = fmt.Sprintf("%s", myErr)
+		tidbContent = fmt.Sprintf("%s", tiErr)
+		return
 	}
-	color.Red("%s QUERY >\t %s", connIdent, query)
-	color.Yellow("%s TiDB  >\t %v", connIdent, myErr)
-	color.Yellow("%s MySQL >\t %v", connIdent, tiErr)
-	return false
-}
 
-func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result, args []interface{}) bool {
-	eq := reflect.DeepEqual(myResult.Resultset, tiResult.Resultset)
-	if eq {
-		return true
+	if reflect.DeepEqual(myResult.Resultset, tiResult.Resultset) {
+		return "", ""
 	}
 
 	mysqlResult, _ := newRows(myResult.Resultset)
@@ -32,7 +26,7 @@ func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result
 	defer mysqlResult.Close()
 	defer tidbResult.Close()
 
-	mysqlContent, tidbContent := mysqlResult.PrettyText(), tidbResult.PrettyText()
+	mysqlContent, tidbContent = mysqlResult.PrettyText(), tidbResult.PrettyText()
 	green := color.New(color.FgGreen).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 	patch := diffmatchpatch.New()
@@ -52,15 +46,5 @@ func diffResult(connIdent string, query string, myResult, tiResult *mysql.Result
 	mysqlContent = newMySQLContent.String()
 	tidbContent = newTiDBContent.String()
 
-	if mysqlContent == tidbContent {
-		return true
-	}
-
-	color.Red("%s QUERY >\t %s (%s)", connIdent, query, strings.Join(FormatArgs(args), ","))
-	color.Yellow("%s TiDB  >", connIdent)
-	fmt.Println(tidbContent)
-	color.Yellow("%s MySQL >", connIdent)
-	fmt.Println(mysqlContent)
-
-	return false
+	return
 }
