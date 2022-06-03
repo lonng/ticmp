@@ -26,8 +26,8 @@ func (c ConsoleRender) Push(frame *Frame) {
 		color.Green("%s [MySQL %s, TiDB %s] ==> %s (%s)", frame.Ident, frame.MySQL.Duration, frame.TiDB.Duration, frame.Query, argStr)
 	} else {
 		color.Red("%s [MySQL %s, TiDB %s] ==> %s (%s)", frame.Ident, frame.MySQL.Duration, frame.TiDB.Duration, frame.Query, argStr)
-		color.Yellow("%s MySQL >\n%s", frame.Ident, c1)
-		color.Yellow("%s TiDB  >\n%s", frame.Ident, c2)
+		fmt.Printf("%s MySQL >\n%s\n", frame.Ident, c1)
+		fmt.Printf("%s TiDB  >\n%s\n", frame.Ident, c2)
 	}
 }
 
