@@ -48,7 +48,7 @@ func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *
 	defer tidbResult.Close()
 
 	mysqlContent, tidbContent = c.prettyText(mysqlResult), c.prettyText(tidbResult)
-	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 	patch := diffmatchpatch.New()
 	diff := patch.DiffMain(mysqlContent, tidbContent, false)
@@ -61,7 +61,7 @@ func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *
 		case diffmatchpatch.DiffDelete:
 			newMySQLContent.WriteString(red(d.Text))
 		case diffmatchpatch.DiffInsert:
-			newTiDBContent.WriteString(green(d.Text))
+			newTiDBContent.WriteString(yellow(d.Text))
 		}
 	}
 	mysqlContent = newMySQLContent.String()
