@@ -14,11 +14,12 @@ type DBConfig struct {
 
 // Config is the configuration for the server.
 type Config struct {
-	User  string
-	Pass  string
-	Port  int
-	MySQL DBConfig
-	TiDB  DBConfig
+	User     string
+	Pass     string
+	HTMLPath string
+	Port     int
+	MySQL    DBConfig
+	TiDB     DBConfig
 }
 
 // DSN returns the data source name for the given database.

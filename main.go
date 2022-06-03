@@ -8,12 +8,13 @@ import (
 	"github.com/go-mysql-org/go-mysql/server"
 	"github.com/lonng/ticomp/config"
 	"github.com/lonng/ticomp/handler"
+	"github.com/lonng/ticomp/render"
 	"github.com/spf13/cobra"
 )
 
-func onConnect(c net.Conn, cfg *config.Config) error {
+func onConnect(c net.Conn, cfg *config.Config, rndr render.Render) error {
 	connIdent := c.RemoteAddr().String()
-	h := handler.NewShadowHandler(cfg, connIdent)
+	h := handler.NewShadowHandler(cfg, connIdent, rndr)
 
 	err := h.Initialize()
 	if err != nil {
@@ -48,6 +49,18 @@ func main() {
 		Use:          "ticomp",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var rndr render.Render
+			if cfg.HTMLPath != "" {
+				hr := &render.HTMLRender{}
+				if err := hr.Open(cfg.HTMLPath); err != nil {
+					return err
+				}
+				rndr = hr
+				defer hr.Close()
+			} else {
+				rndr = render.ConsoleRender{}
+			}
+
 			l, err := net.Listen("tcp4", fmt.Sprintf(":%d", cfg.Port))
 			if err != nil {
 				return err
@@ -62,7 +75,7 @@ func main() {
 					return err
 				}
 
-				go onConnect(c, cfg)
+				go onConnect(c, cfg, rndr)
 			}
 		},
 	}
@@ -74,6 +87,7 @@ func main() {
 	flags.IntVarP(&cfg.Port, "port", "P", 5001, "Listen port of TiCompare shadow server")
 	flags.StringVar(&cfg.User, "user", "root", "TiCompare shadow server user name")
 	flags.StringVar(&cfg.Pass, "pass", "", "TiCompare shadow server password")
+	flags.StringVar(&cfg.HTMLPath, "html", "", "Output compare to specified html file")
 
 	// MySQL server configurations
 	flags.StringVar(&cfg.MySQL.Host, "mysql.host", "127.0.0.1", "MySQL server host name")

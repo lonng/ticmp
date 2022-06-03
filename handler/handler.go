@@ -2,30 +2,32 @@ package handler
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/client"
 	_ "github.com/go-mysql-org/go-mysql/driver"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/server"
 	"github.com/hashicorp/go-multierror"
 	"github.com/lonng/ticomp/config"
+	"github.com/lonng/ticomp/render"
 )
 
 type ShadowHandler struct {
 	server.EmptyHandler
+
 	cfg       *config.Config
 	mysqlConn *client.Conn
 	tidbConn  *client.Conn
 	connIdent string
+	render    render.Render
 }
 
-func NewShadowHandler(config *config.Config, connIdent string) *ShadowHandler {
+func NewShadowHandler(config *config.Config, connIdent string, render render.Render) *ShadowHandler {
 	return &ShadowHandler{
 		cfg:       config,
 		connIdent: connIdent,
+		render:    render,
 	}
 }
 
@@ -85,20 +87,26 @@ func (h *ShadowHandler) UseDB(dbName string) error {
 func (h *ShadowHandler) HandleQuery(query string) (*mysql.Result, error) {
 	start := time.Now()
 	myResult, err1 := h.mysqlConn.Execute(query)
-	myTime := time.Now().Sub(start).String()
+	myTime := time.Now().Sub(start)
 
 	start = time.Now()
 	tiResult, err2 := h.tidbConn.Execute(query)
-	tiTime := time.Now().Sub(start).String()
+	tiTime := time.Now().Sub(start)
 
-	c1, c2 := diffResult(err1, err2, myResult, tiResult)
-	if c1 == c2 {
-		color.Green("%s [MySQL %s, TiDB %s] ==> %s", h.connIdent, myTime, tiTime, query)
-	} else {
-		color.Red("%s [MySQL %s, TiDB %s] ==> %s", h.connIdent, myTime, tiTime, query)
-		color.Yellow("%s MySQL >\n%s", h.connIdent, c1)
-		color.Yellow("%s TiDB  >\n%s", h.connIdent, c2)
-	}
+	h.render.Push(&render.Frame{
+		Ident: h.connIdent,
+		Query: query,
+		TiDB: render.QueryResult{
+			Result:   tiResult,
+			Error:    err2,
+			Duration: tiTime,
+		},
+		MySQL: render.QueryResult{
+			Result:   myResult,
+			Error:    err1,
+			Duration: myTime,
+		},
+	})
 
 	return myResult, err1
 }
@@ -124,21 +132,27 @@ func (h *ShadowHandler) HandleStmtPrepare(query string) (int, int, interface{}, 
 func (h *ShadowHandler) HandleStmtExecute(context interface{}, query string, args []interface{}) (*mysql.Result, error) {
 	start := time.Now()
 	myResult, err1 := h.mysqlConn.Execute(query, args...)
-	myTime := time.Now().Sub(start).String()
+	myTime := time.Now().Sub(start)
 
 	start = time.Now()
 	tiResult, err2 := h.tidbConn.Execute(query, args...)
-	tiTime := time.Now().Sub(start).String()
+	tiTime := time.Now().Sub(start)
 
-	c1, c2 := diffResult(err1, err2, myResult, tiResult)
-	argStr := strings.Join(FormatArgs(args), ", ")
-	if c1 == c2 {
-		color.Green("%s [MySQL %s, TiDB %s] ==> %s (%s)", h.connIdent, myTime, tiTime, query, argStr)
-	} else {
-		color.Red("%s [MySQL %s, TiDB %s] ==> %s (%s)", h.connIdent, myTime, tiTime, query, argStr)
-		color.Yellow("%s MySQL >\n%s", h.connIdent, c1)
-		color.Yellow("%s TiDB  >\n%s", h.connIdent, c2)
-	}
+	h.render.Push(&render.Frame{
+		Ident: h.connIdent,
+		Query: query,
+		Args:  args,
+		TiDB: render.QueryResult{
+			Result:   tiResult,
+			Error:    err2,
+			Duration: tiTime,
+		},
+		MySQL: render.QueryResult{
+			Result:   myResult,
+			Error:    err1,
+			Duration: myTime,
+		},
+	})
 
 	return myResult, err1
 }

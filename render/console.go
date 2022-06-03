@@ -1,71 +1,76 @@
-package handler
+package render
 
 import (
+	"bytes"
 	sqldriver "database/sql/driver"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/mysql"
-	"github.com/siddontang/go/hack"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-type rows struct {
-	*mysql.Resultset
+type ConsoleRender struct{}
 
-	columns []string
-	step    int
+func (c ConsoleRender) Push(frame *Frame) {
+	c1, c2 := c.diffResult(frame.MySQL.Error, frame.TiDB.Error, frame.MySQL.Result, frame.TiDB.Result)
+	var argStr string
+	if len(frame.Args) > 0 {
+		argStr = strings.Join(FormatArgs(frame.Args), ", ")
+		argStr = fmt.Sprintf("(%s)", argStr)
+	}
+	if c1 == c2 {
+		color.Green("%s [MySQL %s, TiDB %s] ==> %s (%s)", frame.Ident, frame.MySQL.Duration, frame.TiDB.Duration, frame.Query, argStr)
+	} else {
+		color.Red("%s [MySQL %s, TiDB %s] ==> %s (%s)", frame.Ident, frame.MySQL.Duration, frame.TiDB.Duration, frame.Query, argStr)
+		color.Yellow("%s MySQL >\n%s", frame.Ident, c1)
+		color.Yellow("%s TiDB  >\n%s", frame.Ident, c2)
+	}
 }
 
-func newRows(r *mysql.Resultset) (*rows, error) {
-	if r == nil {
-		return nil, fmt.Errorf("invalid mysql query, no correct result")
+func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *mysql.Result) (mysqlContent, tidbContent string) {
+	if myErr != tiErr {
+		mysqlContent = fmt.Sprintf("%s", myErr)
+		tidbContent = fmt.Sprintf("%s", tiErr)
+		return
 	}
 
-	rs := new(rows)
-	rs.Resultset = r
-
-	rs.columns = make([]string, len(r.Fields))
-
-	for i, f := range r.Fields {
-		rs.columns[i] = hack.String(f.Name)
-	}
-	rs.step = 0
-
-	return rs, nil
-}
-
-func (r *rows) Columns() []string {
-	return r.columns
-}
-
-func (r *rows) Close() error {
-	r.step = -1
-	return nil
-}
-
-func (r *rows) Next(dest []sqldriver.Value) error {
-	if r.step >= r.Resultset.RowNumber() {
-		return io.EOF
-	} else if r.step == -1 {
-		return io.ErrUnexpectedEOF
+	if reflect.DeepEqual(myResult.Resultset, tiResult.Resultset) {
+		return "", ""
 	}
 
-	for i := 0; i < r.Resultset.ColumnNumber(); i++ {
-		value, err := r.Resultset.GetValue(r.step, i)
-		if err != nil {
-			return err
+	mysqlResult, _ := newRows(myResult.Resultset)
+	tidbResult, _ := newRows(tiResult.Resultset)
+	defer mysqlResult.Close()
+	defer tidbResult.Close()
+
+	mysqlContent, tidbContent = c.prettyText(mysqlResult), c.prettyText(tidbResult)
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	patch := diffmatchpatch.New()
+	diff := patch.DiffMain(mysqlContent, tidbContent, false)
+	var newMySQLContent, newTiDBContent bytes.Buffer
+	for _, d := range diff {
+		switch d.Type {
+		case diffmatchpatch.DiffEqual:
+			newMySQLContent.WriteString(d.Text)
+			newTiDBContent.WriteString(d.Text)
+		case diffmatchpatch.DiffDelete:
+			newMySQLContent.WriteString(red(d.Text))
+		case diffmatchpatch.DiffInsert:
+			newTiDBContent.WriteString(green(d.Text))
 		}
-
-		dest[i] = sqldriver.Value(value)
 	}
+	mysqlContent = newMySQLContent.String()
+	tidbContent = newTiDBContent.String()
 
-	r.step++
-
-	return nil
+	return
 }
 
-func (r *rows) PrettyText() string {
+func (ConsoleRender) prettyText(r *rows) string {
 	cols := r.columns
 	var allRows [][]string
 	for {

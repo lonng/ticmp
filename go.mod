@@ -10,7 +10,7 @@ require (
 	github.com/sergi/go-diff v1.2.0
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
 	github.com/spf13/cobra v1.4.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 )
 
 require (
