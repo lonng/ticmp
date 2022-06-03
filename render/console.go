@@ -31,6 +31,29 @@ func (c ConsoleRender) Push(frame *Frame) {
 	}
 }
 
+type colorFunc func(a ...interface{}) string
+
+func genDiffResult(mysqlContent string, tidbContent string,
+	diffDelete colorFunc, diffInsert colorFunc) (string, string) {
+	patch := diffmatchpatch.New()
+	diff := patch.DiffMain(mysqlContent, tidbContent, false)
+	var newMySQLContent, newTiDBContent bytes.Buffer
+	for _, d := range diff {
+		switch d.Type {
+		case diffmatchpatch.DiffEqual:
+			newMySQLContent.WriteString(d.Text)
+			newTiDBContent.WriteString(d.Text)
+		case diffmatchpatch.DiffDelete:
+			newMySQLContent.WriteString(diffDelete(d.Text))
+		case diffmatchpatch.DiffInsert:
+			newTiDBContent.WriteString(diffInsert(d.Text))
+		}
+	}
+	mysqlContent = newMySQLContent.String()
+	tidbContent = newTiDBContent.String()
+	return mysqlContent, tidbContent
+}
+
 func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *mysql.Result) (mysqlContent, tidbContent string) {
 	if myErr != tiErr {
 		mysqlContent = fmt.Sprintf("%s", myErr)
@@ -50,22 +73,8 @@ func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *
 	mysqlContent, tidbContent = c.prettyText(mysqlResult), c.prettyText(tidbResult)
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
-	patch := diffmatchpatch.New()
-	diff := patch.DiffMain(mysqlContent, tidbContent, false)
-	var newMySQLContent, newTiDBContent bytes.Buffer
-	for _, d := range diff {
-		switch d.Type {
-		case diffmatchpatch.DiffEqual:
-			newMySQLContent.WriteString(d.Text)
-			newTiDBContent.WriteString(d.Text)
-		case diffmatchpatch.DiffDelete:
-			newMySQLContent.WriteString(red(d.Text))
-		case diffmatchpatch.DiffInsert:
-			newTiDBContent.WriteString(yellow(d.Text))
-		}
-	}
-	mysqlContent = newMySQLContent.String()
-	tidbContent = newTiDBContent.String()
+
+	mysqlContent, tidbContent = genDiffResult(mysqlContent, tidbContent, red, yellow)
 
 	return
 }

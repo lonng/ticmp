@@ -1,7 +1,6 @@
 package render
 
 import (
-	"bytes"
 	sqldriver "database/sql/driver"
 	"fmt"
 	"io"
@@ -10,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/go-mysql-org/go-mysql/mysql"
-	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type HTMLRender struct {
@@ -98,28 +96,14 @@ func (c *HTMLRender) diffResult(myErr error, tiErr error, myResult, tiResult *my
 	defer tidbResult.Close()
 
 	mysqlContent, tidbContent = c.prettyHTML(mysqlResult), c.prettyHTML(tidbResult)
-	green := func(t string) string {
-		return fmt.Sprintf("<span style='color:green; font-weight: bolder'>%s</span>", t)
+	green := func(a ...interface{}) string {
+		return fmt.Sprintf("<span style='color:green; font-weight: bolder'>%s</span>", a[0])
 	}
-	red := func(t string) string {
-		return fmt.Sprintf("<span style='color:red; font-weight: bolder'>%s</span>", t)
+	red := func(a ...interface{}) string {
+		return fmt.Sprintf("<span style='color:red; font-weight: bolder'>%s</span>", a[0])
 	}
-	patch := diffmatchpatch.New()
-	diff := patch.DiffMain(mysqlContent, tidbContent, false)
-	var newMySQLContent, newTiDBContent bytes.Buffer
-	for _, d := range diff {
-		switch d.Type {
-		case diffmatchpatch.DiffEqual:
-			newMySQLContent.WriteString(d.Text)
-			newTiDBContent.WriteString(d.Text)
-		case diffmatchpatch.DiffDelete:
-			newMySQLContent.WriteString(red(d.Text))
-		case diffmatchpatch.DiffInsert:
-			newTiDBContent.WriteString(green(d.Text))
-		}
-	}
-	mysqlContent = newMySQLContent.String()
-	tidbContent = newTiDBContent.String()
+
+	mysqlContent, tidbContent = genDiffResult(mysqlContent, tidbContent, red, green)
 
 	return
 }
