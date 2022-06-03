@@ -57,6 +57,13 @@ func main() {
 				}
 				rndr = hr
 				defer hr.Close()
+			} else if cfg.CSVPath != "" {
+				hr := &render.CSVRender{}
+				if err := hr.Open(cfg.CSVPath); err != nil {
+					return err
+				}
+				rndr = hr
+				defer hr.Close()
 			} else {
 				rndr = render.ConsoleRender{}
 			}
@@ -92,6 +99,7 @@ func main() {
 	flags.StringVar(&cfg.User, "user", "root", "TiCompare shadow server user name")
 	flags.StringVar(&cfg.Pass, "pass", "", "TiCompare shadow server password")
 	flags.StringVar(&cfg.HTMLPath, "html", "", "Output compare to specified html file")
+	flags.StringVar(&cfg.CSVPath, "csv", "", "Output compare to specified html file")
 
 	// MySQL server configurations
 	flags.StringVar(&cfg.MySQL.Host, "mysql.host", "127.0.0.1", "MySQL server host name")

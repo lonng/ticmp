@@ -17,6 +17,7 @@ type Config struct {
 	User     string
 	Pass     string
 	HTMLPath string
+	CSVPath  string
 	Port     int
 	MySQL    DBConfig
 	TiDB     DBConfig

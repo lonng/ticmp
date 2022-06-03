@@ -70,7 +70,7 @@ func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *
 	defer mysqlResult.Close()
 	defer tidbResult.Close()
 
-	mysqlContent, tidbContent = c.prettyText(mysqlResult), c.prettyText(tidbResult)
+	mysqlContent, tidbContent = prettyText(mysqlResult), prettyText(tidbResult)
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 
@@ -79,7 +79,7 @@ func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *
 	return
 }
 
-func (ConsoleRender) prettyText(r *rows) string {
+func prettyText(r *rows) string {
 	cols := r.columns
 	var allRows [][]string
 	for {
