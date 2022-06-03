@@ -61,6 +61,10 @@ func main() {
 				rndr = render.ConsoleRender{}
 			}
 
+			// Wrap with asynchronous render
+			rd := render.NewAsyncRender(rndr)
+			go rd.Start()
+
 			l, err := net.Listen("tcp4", fmt.Sprintf(":%d", cfg.Port))
 			if err != nil {
 				return err
@@ -75,7 +79,7 @@ func main() {
 					return err
 				}
 
-				go onConnect(c, cfg, rndr)
+				go onConnect(c, cfg, rd)
 			}
 		},
 	}
