@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-mysql-org/go-mysql/mysql"
 )
@@ -24,7 +25,7 @@ func (c *CSVRender) Open(file string) error {
 	c.w = f
 	c.csvWriter = csv.NewWriter(f)
 
-	c.csvWriter.Write([]string{"IsDiff", "Query", "Args", "MySQL Time", "TiDB Time", "MySQL", "TiDB"})
+	c.csvWriter.Write([]string{"IsDiff", "Query", "Args", "MySQL Time(ms)", "TiDB Time(ms)", "Is TiDB Slow", "MySQL", "TiDB", "Ident"})
 	c.csvWriter.Flush()
 	return nil
 }
@@ -42,18 +43,21 @@ func (c *CSVRender) Push(frame *Frame) {
 		argStr = strings.Join(FormatArgs(frame.Args), ", ")
 	}
 
-	records := make([]string, 7)
+	records := make([]string, 9)
 	if c1 == c2 {
 		records[0] = "NO"
 	} else {
 		records[0] = "YES"
-		records[5] = c1
-		records[6] = c2
+		records[6] = c1
+		records[7] = c2
 	}
 	records[1] = frame.Query
 	records[2] = argStr
-	records[3] = fmt.Sprintf("%v", frame.MySQL.Duration.String())
-	records[4] = fmt.Sprintf("%v", frame.TiDB.Duration.String())
+	records[3] = fmt.Sprintf("%f", float64(frame.MySQL.Duration)/float64(time.Millisecond))
+	records[4] = fmt.Sprintf("%v", float64(frame.TiDB.Duration)/float64(time.Millisecond))
+	records[5] = fmt.Sprintf("%v", frame.TiDB.Duration > frame.MySQL.Duration)
+
+	records[8] = frame.Ident
 
 	c.csvWriter.Write(records)
 	c.csvWriter.Flush()

@@ -37,6 +37,9 @@ func onConnect(c net.Conn, cfg *config.Config, rndr render.Render) error {
 	// as long as the client keeps sending commands, keep handling them
 	for {
 		if err := conn.HandleCommand(); err != nil {
+			if conn.Conn == nil {
+				return nil
+			}
 			fmt.Printf("handle command error: %v\n", err)
 			return err
 		}
@@ -99,7 +102,7 @@ func main() {
 	flags.StringVar(&cfg.User, "user", "root", "TiCompare shadow server user name")
 	flags.StringVar(&cfg.Pass, "pass", "", "TiCompare shadow server password")
 	flags.StringVar(&cfg.HTMLPath, "html", "", "Output compare to specified html file")
-	flags.StringVar(&cfg.CSVPath, "csv", "", "Output compare to specified html file")
+	flags.StringVar(&cfg.CSVPath, "csv", "", "Output compare to specified csv file")
 
 	// MySQL server configurations
 	flags.StringVar(&cfg.MySQL.Host, "mysql.host", "127.0.0.1", "MySQL server host name")
