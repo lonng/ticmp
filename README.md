@@ -1,4 +1,4 @@
-# TiCompare
+# TiCmp
 
 Compare query results between MySQL and TiDB server.
 
