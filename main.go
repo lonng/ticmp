@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/go-mysql-org/go-mysql/server"
-	"github.com/lonng/ticomp/config"
-	"github.com/lonng/ticomp/handler"
-	"github.com/lonng/ticomp/render"
+	"github.com/lonng/ticmp/config"
+	"github.com/lonng/ticmp/handler"
+	"github.com/lonng/ticmp/render"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +49,7 @@ func onConnect(c net.Conn, cfg *config.Config, rndr render.Render) error {
 func main() {
 	cfg := &config.Config{}
 	cmd := &cobra.Command{
-		Use:          "ticomp",
+		Use:          "ticmp",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var rndr render.Render
@@ -98,9 +98,9 @@ func main() {
 	flags.SortFlags = false
 
 	// Shadow server configurations
-	flags.IntVarP(&cfg.Port, "port", "P", 5001, "Listen port of TiCompare shadow server")
-	flags.StringVar(&cfg.User, "user", "root", "TiCompare shadow server user name")
-	flags.StringVar(&cfg.Pass, "pass", "", "TiCompare shadow server password")
+	flags.IntVarP(&cfg.Port, "port", "P", 5001, "Listen port of TiCmp shadow server")
+	flags.StringVar(&cfg.User, "user", "root", "TiCmp shadow server user name")
+	flags.StringVar(&cfg.Pass, "pass", "", "TiCmp shadow server password")
 	flags.StringVar(&cfg.HTMLPath, "html", "", "Output compare to specified html file")
 	flags.StringVar(&cfg.CSVPath, "csv", "", "Output compare to specified csv file")
 

@@ -9,8 +9,8 @@ import (
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/server"
 	"github.com/hashicorp/go-multierror"
-	"github.com/lonng/ticomp/config"
-	"github.com/lonng/ticomp/render"
+	"github.com/lonng/ticmp/config"
+	"github.com/lonng/ticmp/render"
 )
 
 type ShadowHandler struct {

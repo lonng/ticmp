@@ -1,4 +1,4 @@
-module github.com/lonng/ticomp
+module github.com/lonng/ticmp
 
 go 1.18
 
