@@ -66,8 +66,8 @@ func (c *CSVRender) Push(frame *Frame) {
 
 func (c *CSVRender) diffResult(myErr error, tiErr error, myResult, tiResult *mysql.Result) (mysqlContent, tidbContent string) {
 	if myErr != tiErr {
-		mysqlContent = fmt.Sprintf("%s", myErr)
-		tidbContent = fmt.Sprintf("%s", tiErr)
+		mysqlContent = formatError(myErr)
+		tidbContent = formatError(tiErr)
 		return
 	}
 

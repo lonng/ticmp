@@ -54,10 +54,17 @@ func genDiffResult(mysqlContent string, tidbContent string,
 	return mysqlContent, tidbContent
 }
 
+func formatError(err error) string {
+	if err == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s", err.Error())
+}
+
 func (c ConsoleRender) diffResult(myErr error, tiErr error, myResult, tiResult *mysql.Result) (mysqlContent, tidbContent string) {
 	if myErr != tiErr {
-		mysqlContent = fmt.Sprintf("%s", myErr)
-		tidbContent = fmt.Sprintf("%s", tiErr)
+		mysqlContent = formatError(myErr)
+		tidbContent = formatError(tiErr)
 		return
 	}
 

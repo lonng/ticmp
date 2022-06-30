@@ -27,7 +27,7 @@ func onConnect(c net.Conn, cfg *config.Config, rndr render.Render) error {
 		}
 	}()
 
-	// Create a connection with user root and an empty password.
+	// Create a connection with user root and password.
 	// You can use your own handler to handle command here.
 	conn, err := server.NewConn(c, cfg.User, cfg.Pass, h)
 	if err != nil {
@@ -80,7 +80,7 @@ func main() {
 				return err
 			}
 
-			fmt.Printf("Serve successfully (mysql -h 127.0.0.1 -P %d -uroot)\n", cfg.Port)
+			fmt.Printf("Serve successfully (mysql -h 127.0.0.1 -P %d -u%s -p)\n", cfg.Port, cfg.User)
 
 			// Accept a new connection once
 			for {
